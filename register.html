@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Land Title</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="bg-blue-50 text-gray-800">
+  <!-- Mobile Topbar -->
+  <div class="bg-teal-900 text-white p-4 md:hidden flex justify-between items-center">
+    <h2 class="text-xl font-bold">🏛 TitleStone</h2>
+    <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">☰</button>
+  </div>
+
+  <!-- Mobile Sidebar -->
+  <div id="mobileMenu" class="md:hidden hidden bg-teal-900 text-white p-4 space-y-3">
+    <a href="index.html" class="block hover:text-white">📊 Dashboard</a>
+    <a href="register.html" class="block text-teal-200 font-semibold">📝 Register Title</a>
+    <a href="search.html" class="block hover:text-white">🔍 Search Records</a>
+    <a href="transfer.html" class="block hover:text-white">🔁 Transfer Ownership</a>
+    <a href="notarize.html" class="block hover:text-white">📜 Digital Notary</a>
+    <a href="notary-records.html" class="block hover:text-white">📄 Notarized Records</a>
+    <a href="sell-land.html" class="block hover:text-white">🏠 Sell Land</a>
+    <a href="lease-land.html" class="block hover:text-white">🏘️ Lease Land</a>
+
+    <!-- Wallet Mobile -->
+    <div id="wallet-section-mobile" class="mt-4">
+      <button id="connectWalletBtnMobile"
+        class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded w-full">🔌 Connect
+        Wallet</button>
+      <div id="walletInfoMobile" class="hidden mt-3 space-y-2">
+        <div class="text-sm break-all font-mono bg-teal-800 px-3 py-2 rounded">
+          <span id="walletAddressMobile">0x...</span>
+        </div>
+        <button id="disconnectBtnMobile"
+          class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded w-full">❌ Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar Desktop -->
+    <aside class="hidden md:block w-64 bg-teal-900 text-white p-6 flex-shrink-0">
+      <h2 class="text-2xl font-bold mb-8">🏛 TitleStone</h2>
+      <ul class="space-y-4 text-lg">
+        <li><a href="index.html" class="hover:text-white">📊 Dashboard</a></li>
+        <li><a href="register.html" class="text-teal-200 font-semibold">📝 Register Title</a></li>
+        <li><a href="search.html" class="hover:text-white">🔍 Search Records</a></li>
+        <li><a href="transfer.html" class="hover:text-white">🔁 Transfer Ownership</a></li>
+        <li><a href="notarize.html" class="hover:text-white">📜 Digital Notary</a></li>
+        <li><a href="notary-records.html" class="hover:text-white">📄 Notarized Records</a></li>
+        <li><a href="sell-land.html" class="hover:text-white">🏠 Sell Land</a></li>
+        <li><a href="lease-land.html" class="hover:text-white">🏘️ Lease Land</a></li>
+      </ul>
+
+      <!-- Wallet Desktop -->
+      <div id="wallet-section" class="mt-10">
+        <button id="connectWalletBtn"
+          class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded w-full">🔌 Connect
+          Wallet</button>
+        <div id="walletInfo" class="hidden mt-4 space-y-2">
+          <div class="text-sm break-all font-mono bg-teal-800 px-3 py-2 rounded">
+            <span id="walletAddress">0x...</span>
+          </div>
+          <button id="disconnectBtn"
+            class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded w-full">❌ Disconnect</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-8">
+      <h1 class="text-3xl md:text-4xl font-bold mb-6">Register Land Title</h1>
+
+      <div class="max-w-xl bg-white p-6 rounded-xl shadow-md mx-auto">
+        <form id="registerForm" class="space-y-4">
+          <div>
+            <label for="ownerName" class="block font-medium mb-1">👤 Owner Name:</label>
+            <input type="text" id="ownerName" required placeholder="e.g. Juan Dela Cruz"
+              class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+          </div>
+          <div>
+            <label for="location" class="block font-medium mb-1">📍 Location:</label>
+            <input type="text" id="location" required placeholder="e.g. Taguig, PH"
+              class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+          </div>
+          <div>
+            <label for="area" class="block font-medium mb-1">📏 Square Meters:</label>
+            <input type="number" id="area" required placeholder="e.g. 200"
+              class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+          </div>
+
+          <button type="submit" id="submitBtn" disabled
+            class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-md opacity-50 cursor-not-allowed">
+            ➕ Register Land
+          </button>
+        </form>
+        <p id="status" class="mt-4 text-sm text-gray-700"></p>
+      </div>
+    </main>
+  </div>
+
+  <!-- Register Logic -->
+  <script type="module">
+    import { CONTRACT_ADDRESS, CONTRACT_ABI } from './scripts/contract.js';
+
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const walletInfo = document.getElementById("walletInfo");
+    const walletAddressSpan = document.getElementById("walletAddress");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+
+    const connectWalletBtnMobile = document.getElementById("connectWalletBtnMobile");
+    const walletInfoMobile = document.getElementById("walletInfoMobile");
+    const walletAddressMobile = document.getElementById("walletAddressMobile");
+    const disconnectBtnMobile = document.getElementById("disconnectBtnMobile");
+
+    const status = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+    const form = document.getElementById("registerForm");
+
+    let currentAddress = null;
+
+    async function connectWallet() {
+      if (!window.ethereum) return alert("Please install MetaMask.");
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      currentAddress = accounts[0];
+      const short = `${currentAddress.slice(0, 6)}...${currentAddress.slice(-4)}`;
+
+      walletAddressSpan.textContent = short;
+      walletAddressMobile.textContent = short;
+      walletInfo.classList.remove("hidden");
+      connectWalletBtn.classList.add("hidden");
+      walletInfoMobile.classList.remove("hidden");
+      connectWalletBtnMobile.classList.add("hidden");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+
+      sessionStorage.setItem("walletAddress", currentAddress);
+      status.textContent = `✅ Wallet connected: ${short}`;
+    }
+
+    function disconnectWallet() {
+      sessionStorage.removeItem("walletAddress");
+      walletInfo.classList.add("hidden");
+      connectWalletBtn.classList.remove("hidden");
+      walletAddressSpan.textContent = "";
+      walletInfoMobile.classList.add("hidden");
+      connectWalletBtnMobile.classList.remove("hidden");
+      walletAddressMobile.textContent = "";
+      currentAddress = null;
+      submitBtn.disabled = true;
+      submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      status.textContent = "⚠️ Wallet disconnected.";
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = sessionStorage.getItem("walletAddress");
+      if (saved) {
+        currentAddress = saved;
+        const short = `${saved.slice(0, 6)}...${saved.slice(-4)}`;
+        walletAddressSpan.textContent = short;
+        walletAddressMobile.textContent = short;
+        walletInfo.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        walletInfoMobile.classList.remove("hidden");
+        connectWalletBtnMobile.classList.add("hidden");
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
+    });
+
+    if (window.ethereum) {
+      window.ethereum.on("accountsChanged", (accounts) => {
+        if (!accounts.length) {
+          disconnectWallet();
+        } else if (accounts[0] !== currentAddress) {
+          currentAddress = accounts[0];
+          sessionStorage.setItem("walletAddress", currentAddress);
+          const short = `${currentAddress.slice(0, 6)}...${currentAddress.slice(-4)}`;
+          walletAddressSpan.textContent = short;
+          walletAddressMobile.textContent = short;
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+          status.textContent = `✅ Switched account: ${short}`;
+        }
+      });
+    }
+
+    connectWalletBtn.addEventListener("click", connectWallet);
+    connectWalletBtnMobile.addEventListener("click", connectWallet);
+    disconnectBtn.addEventListener("click", disconnectWallet);
+    disconnectBtnMobile.addEventListener("click", disconnectWallet);
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentAddress) return (status.textContent = "❌ Connect wallet first.");
+
+      const ownerName = document.getElementById("ownerName").value.trim();
+      const location = document.getElementById("location").value.trim();
+      const area = parseInt(document.getElementById("area").value.trim(), 10);
+
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+        const tx = await contract.registerLand(ownerName, location, area);
+        status.textContent = "⏳ Waiting for confirmation...";
+        await tx.wait();
+
+        status.innerHTML = `✅ Land registered!<br><code class="text-blue-600">${tx.hash}</code>`;
+        form.reset();
+      } catch (err) {
+        console.error(err);
+        if (err.info.error.code == 4001) {
+          status.innerHTML = `<span class="text-yellow-600">⚠️ Transaction cancelled by user.</span>`;
+        } else {
+          status.innerHTML = `<span class="text-red-600">❌ Error:</span> ${err.message}`;
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>

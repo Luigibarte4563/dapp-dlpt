@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owned Land Lookup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="flex min-h-screen bg-blue-50 text-gray-800">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-teal-900 text-white p-6">
+    <h2 class="text-2xl font-bold mb-8">🏛 Titlestone</h2>
+    <ul class="space-y-4 text-lg">
+      <li><a href="index.html" class="hover:text-teal-200">📊 Dashboard</a></li>
+      <li><a href="register.html" class="hover:text-white">📝 Register Title</a></li>
+      <li><a href="search.html" class="hover:text-white">🔍 Search by Hash</a></li>
+      <li><a href="owned-land.html" class="text-teal-200 font-semibold">👤 Search by Owner</a></li>
+      <li><a href="transfer.html" class="hover:text-white">🔁 Transfer Ownership</a></li>
+      <li><a href="#" class="hover:text-white">📜 Digital Notary</a></li>
+      <li><a href="#" class="hover:text-white">🛒 Marketplace</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-8">
+    <h1 class="text-4xl font-bold mb-6">Lookup Land Owned by a Wallet</h1>
+
+    <div class="max-w-xl bg-white p-6 rounded-xl shadow-md">
+      <form id="walletForm" class="space-y-4">
+        <div>
+          <label for="walletAddress" class="block font-medium mb-1">🧾 Wallet Address:</label>
+          <input type="text" id="walletAddress" required placeholder="0x..."
+            class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+        </div>
+
+        <button type="submit"
+          class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md">
+          View Owned Lands
+        </button>
+      </form>
+
+      <div id="results" class="mt-6 text-sm"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { CONTRACT_ABI, CONTRACT_ADDRESS } from './contract.js';
+
+    const form = document.getElementById('walletForm');
+    const resultsDiv = document.getElementById('results');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultsDiv.innerHTML = '<p class="text-gray-600">🔍 Searching...</p>';
+
+      const wallet = document.getElementById("walletAddress").value.trim();
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const total = await contract.nextLandId();
+
+        let ownedLands = [];
+
+        for (let i = 0; i < total; i++) {
+          const land = await contract.getLandDetails(i);
+          if (land.owner.toLowerCase() === wallet.toLowerCase()) {
+            ownedLands.push(land);
+          }
+        }
+
+        if (ownedLands.length === 0) {
+          resultsDiv.innerHTML = '<p class="text-red-600 mt-4">❌ No land records found for this wallet.</p>';
+        } else {
+          resultsDiv.innerHTML = `<h3 class="font-semibold text-green-700 mb-2">✅ ${ownedLands.length} land title(s) found:</h3>`;
+          ownedLands.forEach(land => {
+            resultsDiv.innerHTML += `
+              <div class="bg-gray-100 p-4 rounded-lg mt-4 shadow-sm space-y-2">
+                <p><strong class="text-gray-700">Title ID:</strong> T-${land.id}</p>
+                <p><strong class="text-gray-700">Location:</strong> ${land.location}</p>
+                <p><strong class="text-gray-700">Area:</strong> ${land.squareMeters} sq. meters</p>
+              </div>
+            `;
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = `<p class="text-red-600 mt-4">❌ Error: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+
+</html>

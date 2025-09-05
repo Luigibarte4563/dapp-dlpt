@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLPT Driver & Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="bg-blue-50 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-teal-900 text-white flex items-center justify-between px-4 py-3 shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl font-bold">🚦 DLPT</span>
+      <span class="hidden sm:inline text-sm font-semibold ml-2">Driver & Admin Dashboard</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="notificationsBtn" class="relative text-xl hover:text-teal-300" aria-label="Notifications">
+        <span>🔔</span>
+        <span id="notifDot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+      </button>
+      <button id="connectWalletBtn" class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded">
+        Connect Wallet
+      </button>
+      <div id="profile" class="hidden flex items-center gap-2 bg-teal-800 px-3 py-1 rounded text-sm font-mono">
+        <span id="walletShort">0x...</span>
+        <span id="roleTag" class="ml-2 bg-teal-600 px-2 py-1 rounded text-xs font-bold"></span>
+        <span id="plateTag" class="ml-2 bg-teal-600 px-2 py-1 rounded text-xs font-bold hidden"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notifications Drawer -->
+  <div id="notificationsDrawer" class="fixed top-0 right-0 w-80 max-w-full h-full bg-white shadow-lg z-50 p-6 hidden flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-lg font-bold text-teal-900">Notifications</span>
+      <button onclick="document.getElementById('notificationsDrawer').classList.add('hidden')" class="text-xl">✖️</button>
+    </div>
+    <ul id="notificationsList" class="space-y-3 text-gray-700">
+      <!-- Notifications will be injected here -->
+    </ul>
+  </div>
+
+  <!-- Main -->
+  <main class="flex-1 flex flex-col items-center px-4 py-8">
+    <!-- Driver Login Section -->
+    <section id="driverLoginSection" class="w-full max-w-md bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Driver Login</h2>
+      <form id="driverLoginForm" class="space-y-4">
+        <input type="text" id="plateNumber" placeholder="Plate Number" required class="w-full px-4 py-2 border rounded-md" />
+        <input type="password" id="driverPin" placeholder="PIN" required class="w-full px-4 py-2 border rounded-md" />
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 rounded-md">
+          Login
+        </button>
+      </form>
+      <p id="driverLoginStatus" class="mt-4 text-sm text-gray-700"></p>
+    </section>
+
+    <!-- Driver Dashboard -->
+    <section id="driverDashboard" class="w-full max-w-2xl bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Your Violations</h2>
+      <div class="mb-6">
+        <span class="font-semibold text-teal-700">License Points:</span>
+        <span id="licensePoints" class="font-bold text-lg ml-2">100</span>
+      </div>
+      <h3 class="text-lg font-bold mb-2 text-gray-800">Unpaid Violations</h3>
+      <table class="min-w-full text-sm table-auto border border-gray-300 mb-4">
+        <thead class="bg-teal-700 text-white">
+          <tr>
+            <th class="p-2 text-left">Type</th>
+            <th class="p-2 text-left">Location</th>
+            <th class="p-2 text-left">Timestamp</th>
+            <th class="p-2 text-left">Action</th>
+          </tr>
+        </thead>
+        <tbody id="unpaidTable" class="bg-white text-gray-800"></tbody>
+      </table>
+      <h3 class="text-lg font-bold mb-2 text-gray-800">Paid Violations</h3>
+      <table class="min-w-full text-sm table-auto border border-gray-300">
+        <thead class="bg-teal-700 text-white">
+          <tr>
+            <th class="p-2 text-left">Type</th>
+            <th class="p-2 text-left">Location</th>
+            <th class="p-2 text-left">Timestamp</th>
+            <th class="p-2 text-left">Paid On</th>
+          </tr>
+        </thead>
+        <tbody id="paidTable" class="bg-white text-gray-800"></tbody>
+      </table>
+      <div class="mt-6">
+        <h3 class="font-bold mb-2 text-gray-800">Payment Options</h3>
+        <div class="flex gap-4">
+          <span class="bg-gray-100 px-3 py-1 rounded">GCash</span>
+          <span class="bg-gray-100 px-3 py-1 rounded">PayMaya</span>
+          <span class="bg-gray-100 px-3 py-1 rounded">Bank</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin Dashboard -->
+    <section id="adminDashboard" class="w-full max-w-4xl bg-white rounded-xl shadow-md p-6 mb-8 hidden">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Ledger Monitor</h2>
+      <table class="min-w-full text-sm table-auto border border-gray-300 mb-6">
+        <thead class="bg-teal-700 text-white">
+          <tr>
+            <th class="p-2 text-left">Officer</th>
+            <th class="p-2 text-left">License #</th>
+            <th class="p-2 text-left">Type</th>
+            <th class="p-2 text-left">Location</th>
+            <th class="p-2 text-left">Timestamp</th>
+            <th class="p-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTable" class="bg-white text-gray-800"></tbody>
+      </table>
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Analytics</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="bg-teal-50 p-4 rounded shadow text-center">
+          <div class="text-2xl font-bold" id="hotspotCount">0</div>
+          <div class="text-gray-700">Violation Hotspots</div>
+        </div>
+        <div class="bg-teal-50 p-4 rounded shadow text-center">
+          <div class="text-2xl font-bold" id="repeatOffenders">0</div>
+          <div class="text-gray-700">Repeat Offenders</div>
+        </div>
+        <div class="bg-teal-50 p-4 rounded shadow text-center">
+          <div class="text-2xl font-bold" id="revenueTotal">₱0</div>
+          <div class="text-gray-700">Total Revenue</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Role detection
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get("role") || "driver";
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const profile = document.getElementById("profile");
+    const walletShort = document.getElementById("walletShort");
+    const roleTag = document.getElementById("roleTag");
+    const plateTag = document.getElementById("plateTag");
+    let userWallet = null;
+    let plateNumber = null;
+
+    // Show correct dashboard
+    function showDashboard() {
+      if (role === "admin") {
+        roleTag.textContent = "Admin";
+        plateTag.classList.add("hidden");
+        document.getElementById("adminDashboard").classList.remove("hidden");
+        document.getElementById("driverDashboard").classList.add("hidden");
+        document.getElementById("driverLoginSection").classList.add("hidden");
+        loadLedger();
+        loadAnalytics();
+      } else {
+        roleTag.textContent = "Driver";
+        document.getElementById("adminDashboard").classList.add("hidden");
+        document.getElementById("driverDashboard").classList.remove("hidden");
+        document.getElementById("driverLoginSection").classList.add("hidden");
+        plateTag.classList.remove("hidden");
+        plateTag.textContent = plateNumber ? plateNumber : "";
+        loadDriverViolations();
+      }
+    }
+
+    // Wallet Connect Logic
+    connectWalletBtn.onclick = async () => {
+      if (!window.ethereum) {
+        alert("🦊 Please install MetaMask.");
+        return;
+      }
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        userWallet = accounts[0];
+        const short = `${userWallet.slice(0, 6)}...${userWallet.slice(-4)}`;
+        sessionStorage.setItem("walletAddress", userWallet);
+        walletShort.textContent = short;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        if (role === "driver") {
+          // Show plate login if not set
+          if (!sessionStorage.getItem("plateNumber")) {
+            document.getElementById("driverLoginSection").classList.remove("hidden");
+            document.getElementById("driverDashboard").classList.add("hidden");
+          } else {
+            plateNumber = sessionStorage.getItem("plateNumber");
+            plateTag.textContent = plateNumber;
+            showDashboard();
+          }
+        } else {
+          showDashboard();
+        }
+      } catch (err) {
+        alert("Wallet connection failed.");
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = sessionStorage.getItem("walletAddress");
+      if (saved) {
+        userWallet = saved;
+        walletShort.textContent = `${saved.slice(0, 6)}...${saved.slice(-4)}`;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        if (role === "driver") {
+          plateNumber = sessionStorage.getItem("plateNumber");
+          if (!plateNumber) {
+            document.getElementById("driverLoginSection").classList.remove("hidden");
+            document.getElementById("driverDashboard").classList.add("hidden");
+          } else {
+            plateTag.textContent = plateNumber;
+            showDashboard();
+          }
+        } else {
+          showDashboard();
+        }
+      } else if (role === "driver") {
+        document.getElementById("driverLoginSection").classList.remove("hidden");
+      }
+    });
+
+    // Driver Login (plate + PIN, demo only)
+    document.getElementById("driverLoginForm").onsubmit = (e) => {
+      e.preventDefault();
+      plateNumber = document.getElementById("plateNumber").value.trim();
+      const pin = document.getElementById("driverPin").value.trim();
+      if (plateNumber && pin) {
+        sessionStorage.setItem("plateNumber", plateNumber);
+        plateTag.textContent = plateNumber;
+        document.getElementById("driverLoginSection").classList.add("hidden");
+        showDashboard();
+      } else {
+        document.getElementById("driverLoginStatus").textContent = "Invalid plate or PIN.";
+      }
+    };
+
+    // Driver Violations Logic
+    function loadDriverViolations() {
+      const unpaidTable = document.getElementById("unpaidTable");
+      const paidTable = document.getElementById("paidTable");
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      // For demo, match by plateNumber as license
+      const myViolations = violations.filter(v => v.license === plateNumber);
+      let points = 100 - (myViolations.filter(v => v.status === "Unpaid").length * 10);
+      document.getElementById("licensePoints").textContent = points;
+      const unpaid = myViolations.filter(v => v.status === "Unpaid");
+      const paid = myViolations.filter(v => v.status === "Paid");
+      unpaidTable.innerHTML = unpaid.length
+        ? unpaid.map((v, i) => `
+          <tr>
+            <td class="p-2">${v.type}</td>
+            <td class="p-2">${v.location}</td>
+            <td class="p-2">${v.timestamp.replace('T', '')}</td>
+            <td class="p-2">
+              <button class="bg-teal-600 text-white px-3 py-1 rounded" onclick="payViolation(${i})">Pay Now</button>
+            </td>
+          </tr>
+        `).join('')
+        : `<tr><td colspan="4" class="p-2 text-center text-gray-400">No unpaid violations.</td></tr>`;
+      paidTable.innerHTML = paid.length
+        ? paid.map(v => `
+          <tr>
+            <td class="p-2">${v.type}</td>
+            <td class="p-2">${v.location}</td>
+            <td class="p-2">${v.timestamp.replace('T', '')}</td>
+            <td class="p-2">${v.paidOn || '-'}</td>
+          </tr>
+        `).join('')
+        : `<tr><td colspan="4" class="p-2 text-center text-gray-400">No paid violations.</td></tr>`;
+    }
+
+    // Pay Violation (demo only)
+    window.payViolation = function (idx) {
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      const myViolations = violations.filter(v => v.license === plateNumber && v.status === "Unpaid");
+      if (myViolations[idx]) {
+        // Mark as paid
+        const v = myViolations[idx];
+        const i = violations.findIndex(x => x.license === v.license && x.timestamp === v.timestamp && x.status === "Unpaid");
+        violations[i].status = "Paid";
+        violations[i].paidOn = new Date().toISOString().slice(0, 16).replace('T', ' ');
+        localStorage.setItem("violations", JSON.stringify(violations));
+        loadDriverViolations();
+      }
+    };
+
+    // Admin Ledger Logic
+    function loadLedger() {
+      const ledgerTable = document.getElementById("ledgerTable");
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      ledgerTable.innerHTML = violations.length
+        ? violations.map(v => `
+          <tr>
+            <td class="p-2">${v.officer ? `${v.officer.slice(0, 6)}...${v.officer.slice(-4)}` : '-'}</td>
+            <td class="p-2">${v.license}</td>
+            <td class="p-2">${v.type}</td>
+            <td class="p-2">${v.location}</td>
+            <td class="p-2">${v.timestamp.replace('T', '')}</td>
+            <td class="p-2">${v.status}</td>
+          </tr>
+        `).join('')
+        : `<tr><td colspan="6" class="p-2 text-center text-gray-400">No violations found.</td></tr>`;
+    }
+
+    // Admin Analytics Logic (demo)
+    function loadAnalytics() {
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      // Hotspots: count unique locations with >2 violations
+      const locs = {};
+      violations.forEach(v => { locs[v.location] = (locs[v.location] || 0) + 1; });
+      const hotspots = Object.values(locs).filter(c => c > 2).length;
+      document.getElementById("hotspotCount").textContent = hotspots;
+      // Repeat offenders: license numbers with >1 violation
+      const lic = {};
+      violations.forEach(v => { lic[v.license] = (lic[v.license] || 0) + 1; });
+      const repeats = Object.values(lic).filter(c => c > 1).length;
+      document.getElementById("repeatOffenders").textContent = repeats;
+      // Revenue: ₱500 per paid violation
+      const revenue = violations.filter(v => v.status === "Paid").length * 500;
+      document.getElementById("revenueTotal").textContent = `₱${revenue}`;
+    }
+
+    // Notifications Logic (demo)
+    const notificationsBtn = document.getElementById("notificationsBtn");
+    const notificationsDrawer = document.getElementById("notificationsDrawer");
+    const notificationsList = document.getElementById("notificationsList");
+    const notifDot = document.getElementById("notifDot");
+    notificationsBtn.onclick = () => {
+      notificationsDrawer.classList.remove("hidden");
+      notifDot.classList.add("hidden");
+    };
+    // Example notifications
+    const demoNotifsDriver = [
+      "New violation issued.",
+      "Unpaid violation reminder.",
+      "License points deducted."
+    ];
+    const demoNotifsAdmin = [
+      "Spike in violations detected.",
+      "Repeat offender flagged.",
+      "Revenue milestone reached."
+    ];
+    notificationsList.innerHTML = (role === "admin" ? demoNotifsAdmin : demoNotifsDriver)
+      .map(n => `<li class="border-b pb-2">${n}</li>`).join('');
+    notifDot.classList.remove("hidden");
+  </script>
+</body>
+
+</html>

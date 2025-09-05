@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Land Title Lookup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="min-h-screen bg-blue-50 text-gray-800">
+  <!-- Mobile Topbar -->
+  <div class="bg-teal-900 text-white p-4 md:hidden flex justify-between items-center">
+    <h2 class="text-xl font-bold">🏛 TitleStone</h2>
+    <button onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">☰</button>
+  </div>
+
+  <!-- Mobile Sidebar -->
+  <div id="mobileMenu" class="md:hidden hidden bg-teal-900 text-white p-4 space-y-3">
+    <a href="index.html" class="block hover:text-white">📊 Dashboard</a>
+    <a href="register.html" class="block hover:text-white">📝 Register Title</a>
+    <a href="search.html" class="block text-teal-200 font-semibold">🔍 Search Records</a>
+    <a href="transfer.html" class="block hover:text-white">🔁 Transfer Ownership</a>
+    <a href="notarize.html" class="block hover:text-white">📜 Digital Notary</a>
+    <a href="notary-records.html" class="block hover:text-white">📄 Notarized Records</a>
+    <a href="sell-land.html" class="block hover:text-white">🏠 Sell Land</a>
+    <a href="lease-land.html" class="block hover:text-white">🏘️ Lease Land</a>
+
+    <div id="wallet-section-mobile" class="mt-4">
+      <button id="connectWalletBtnMobile"
+        class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded w-full">🔌 Connect
+        Wallet</button>
+      <div id="walletInfoMobile" class="hidden mt-3 space-y-2">
+        <div class="text-sm break-all font-mono bg-teal-800 px-3 py-2 rounded">
+          <span id="walletAddressMobile">0x...</span>
+        </div>
+        <button id="disconnectBtnMobile"
+          class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded w-full">❌ Disconnect</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-col md:flex-row min-h-screen">
+    <!-- Sidebar -->
+    <aside class="hidden md:block w-64 bg-teal-900 text-white p-6 flex-shrink-0">
+      <h2 class="text-2xl font-bold mb-6">🏛 TitleStone</h2>
+      <ul class="space-y-4 text-lg">
+        <li><a href="index.html" class="hover:text-white">📊 Dashboard</a></li>
+        <li><a href="register.html" class="hover:text-white">📝 Register Title</a></li>
+        <li><a href="search.html" class="text-teal-200 font-semibold">🔍 Search Records</a></li>
+        <li><a href="transfer.html" class="hover:text-white">🔁 Transfer Ownership</a></li>
+        <li><a href="notarize.html" class="hover:text-white">📜 Digital Notary</a></li>
+        <li><a href="notary-records.html" class="hover:text-white">📄 Notarized Records</a></li>
+        <li><a href="sell-land.html" class="hover:text-white">🏠 Sell Land</a></li>
+        <li><a href="lease-land.html" class="hover:text-white">🏘️ Lease Land</a></li>
+      </ul>
+
+      <div id="wallet-section" class="mt-10">
+        <button id="connectWalletBtn"
+          class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded w-full">🔌 Connect
+          Wallet</button>
+        <div id="walletInfo" class="hidden mt-4 space-y-2">
+          <div class="text-sm break-all font-mono bg-teal-800 px-3 py-2 rounded">
+            <span id="walletAddress">0x...</span>
+          </div>
+          <button id="disconnectBtn"
+            class="bg-red-600 hover:bg-red-500 text-white font-semibold px-4 py-2 rounded w-full">❌ Disconnect</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 space-y-10">
+      <section>
+        <h2 class="text-2xl md:text-3xl font-semibold mb-4">🏷️ Lookup Land Title by ID</h2>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <form id="landIdForm" class="space-y-4">
+            <label for="landId" class="block font-medium">Land Title ID (e.g., T-1):</label>
+            <input type="text" id="landId" required placeholder="T-1"
+              class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+            <button type="submit"
+              class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md">Search</button>
+          </form>
+          <div id="landIdResult" class="mt-6 text-sm"></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="text-2xl md:text-3xl font-semibold mb-4">👤 Lookup Land Title by Owner Wallet</h2>
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <form id="walletForm" class="space-y-4">
+            <label for="walletInput" class="block font-medium">Wallet Address:</label>
+            <input type="text" id="walletInput" required placeholder="0x..."
+              class="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-300" />
+            <button type="submit"
+              class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-md">View Owned
+              Lands</button>
+          </form>
+          <div id="results" class="mt-6 text-sm"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Wallet Logic -->
+  <script>
+    const connectBtn = document.getElementById("connectWalletBtn");
+    const walletInfo = document.getElementById("walletInfo");
+    const walletAddressSpan = document.getElementById("walletAddress");
+    const disconnectBtn = document.getElementById("disconnectBtn");
+
+    const connectBtnMobile = document.getElementById("connectWalletBtnMobile");
+    const walletInfoMobile = document.getElementById("walletInfoMobile");
+    const walletAddressMobile = document.getElementById("walletAddressMobile");
+    const disconnectBtnMobile = document.getElementById("disconnectBtnMobile");
+
+    async function connectWallet() {
+      if (!window.ethereum) {
+        alert("🦊 Please install MetaMask.");
+        return;
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      const address = accounts[0];
+      const short = `${address.slice(0, 6)}...${address.slice(-4)}`;
+
+      sessionStorage.setItem("walletAddress", address);
+
+      walletAddressSpan.textContent = short;
+      walletAddressMobile.textContent = short;
+      connectBtn?.classList.add("hidden");
+      walletInfo?.classList.remove("hidden");
+      connectBtnMobile?.classList.add("hidden");
+      walletInfoMobile?.classList.remove("hidden");
+    }
+
+    function disconnectWallet() {
+      sessionStorage.removeItem("walletAddress");
+      walletAddressSpan.textContent = "";
+      walletAddressMobile.textContent = "";
+      connectBtn?.classList.remove("hidden");
+      walletInfo?.classList.add("hidden");
+      connectBtnMobile?.classList.remove("hidden");
+      walletInfoMobile?.classList.add("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = sessionStorage.getItem("walletAddress");
+      if (saved) {
+        const short = `${saved.slice(0, 6)}...${saved.slice(-4)}`;
+        walletAddressSpan.textContent = short;
+        walletAddressMobile.textContent = short;
+        connectBtn?.classList.add("hidden");
+        walletInfo?.classList.remove("hidden");
+        connectBtnMobile?.classList.add("hidden");
+        walletInfoMobile?.classList.remove("hidden");
+      }
+
+      // ✅ Listen to MetaMask account changes
+      if (window.ethereum) {
+        window.ethereum.on("accountsChanged", (accounts) => {
+          if (accounts.length === 0) {
+            disconnectWallet();
+          } else {
+            const address = accounts[0];
+            const short = `${address.slice(0, 6)}...${address.slice(-4)}`;
+            sessionStorage.setItem("walletAddress", address);
+            walletAddressSpan.textContent = short;
+            walletAddressMobile.textContent = short;
+            connectBtn?.classList.add("hidden");
+            walletInfo?.classList.remove("hidden");
+            connectBtnMobile?.classList.add("hidden");
+            walletInfoMobile?.classList.remove("hidden");
+          }
+        });
+      }
+    });
+
+    connectBtn?.addEventListener("click", connectWallet);
+    disconnectBtn?.addEventListener("click", disconnectWallet);
+    connectBtnMobile?.addEventListener("click", connectWallet);
+    disconnectBtnMobile?.addEventListener("click", disconnectWallet);
+  </script>
+
+
+  <!-- Contract Logic -->
+  <script type="module">
+    import { CONTRACT_ABI, CONTRACT_ADDRESS } from './scripts/contract.js';
+
+    const landIdForm = document.getElementById('landIdForm');
+    const landIdResult = document.getElementById('landIdResult');
+    const walletForm = document.getElementById('walletForm');
+    const resultsDiv = document.getElementById('results');
+
+    landIdForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      landIdResult.innerHTML = '<p class="text-gray-600">🔍 Searching...</p>';
+      try {
+        const input = document.getElementById('landId').value.trim().toUpperCase();
+        if (!input.startsWith('T-')) throw new Error("Invalid format. Use 'T-1', 'T-2', etc.");
+        const id = parseInt(input.slice(2));
+        if (isNaN(id)) throw new Error("Invalid ID number.");
+
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const land = await contract.getLandDetails(id);
+
+        landIdResult.innerHTML = `
+          <div class="bg-gray-100 p-4 rounded-lg mt-4 shadow-sm space-y-2">
+            <p><strong>Land ID:</strong> T-${land.id}</p>
+            <p><strong>Owner Name:</strong> ${land.ownerName}</p>
+            <p><strong>Owner Address:</strong> ${land.owner}</p>
+            <p><strong>Location:</strong> ${land.location}</p>
+            <p><strong>Area:</strong> ${land.squareMeters} sq. m.</p>
+          </div>`;
+      } catch (err) {
+        landIdResult.innerHTML = `<p class="text-red-600">❌ ${err.message}</p>`;
+      }
+    });
+
+    walletForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultsDiv.innerHTML = '<p class="text-gray-600">🔍 Searching...</p>';
+      const wallet = document.getElementById("walletInput").value.trim();
+
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider);
+        const total = await contract.nextLandId();
+
+        let owned = [];
+        for (let i = 0; i < total; i++) {
+          const land = await contract.getLandDetails(i);
+          if (land.owner.toLowerCase() === wallet.toLowerCase()) {
+            owned.push(land);
+          }
+        }
+
+        if (owned.length === 0) {
+          resultsDiv.innerHTML = '<p class="text-red-600 mt-4">❌ No land records found.</p>';
+        } else {
+          resultsDiv.innerHTML = `<h3 class="font-semibold text-green-700 mb-2">✅ ${owned.length} title(s) found:</h3>`;
+          owned.forEach(land => {
+            resultsDiv.innerHTML += `
+              <div class="bg-gray-100 p-4 rounded-lg mt-4 shadow-sm space-y-2">
+                <p><strong>Title ID:</strong> T-${land.id}</p>
+                <p><strong>Owner Name:</strong> ${land.ownerName}</p>
+                <p><strong>Location:</strong> ${land.location}</p>
+                <p><strong>Area:</strong> ${land.squareMeters} sq. meters</p>
+              </div>`;
+          });
+        }
+      } catch (err) {
+        resultsDiv.innerHTML = `<p class="text-red-600 mt-4">❌ Error: ${err.message}</p>`;
+      }
+    });
+  </script>
+</body>
+
+</html>

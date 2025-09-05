@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLPT — Web3 Violation Management MVP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="bg-blue-50 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-teal-900 text-white flex items-center justify-between px-4 py-3 shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl font-bold">🚦 DLPT</span>
+      <span class="hidden sm:inline text-sm font-semibold ml-2">Web3 Violation Management MVP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="notificationsBtn" class="relative text-xl hover:text-teal-300" aria-label="Notifications">
+        <span>🔔</span>
+        <span id="notifDot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+      </button>
+      <button id="connectWalletBtn" class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded">
+        Connect Wallet
+      </button>
+      <div id="profile" class="hidden flex items-center gap-2 bg-teal-800 px-3 py-1 rounded text-sm font-mono">
+        <span id="walletShort">0x...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notifications Drawer -->
+  <div id="notificationsDrawer" class="fixed top-0 right-0 w-80 max-w-full h-full bg-white shadow-lg z-50 p-6 hidden flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-lg font-bold text-teal-900">Notifications</span>
+      <button onclick="document.getElementById('notificationsDrawer').classList.add('hidden')" class="text-xl">✖️</button>
+    </div>
+    <ul id="notificationsList" class="space-y-3 text-gray-700">
+      <!-- Notifications will be injected here -->
+    </ul>
+  </div>
+
+  <!-- Main Dashboard -->
+  <main class="flex-1 flex flex-col items-center justify-center px-4 py-8">
+    <section class="max-w-2xl w-full text-center mb-10">
+      <h1 class="text-3xl sm:text-4xl font-bold mb-3 text-teal-900">DLPT — Web3 Violation Management MVP</h1>
+      <p class="text-gray-700 text-lg mb-2">
+        A decentralized platform for traffic violation management. Officers issue tickets, drivers pay fines, and admins monitor—all on-chain.
+      </p>
+    </section>
+    <section class="w-full max-w-3xl grid grid-cols-1 sm:grid-cols-3 gap-6">
+      <!-- Officer Card -->
+      <a href="lease-land.html" class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:bg-teal-50 transition">
+        <div class="text-4xl mb-2">👮‍♂️</div>
+        <div class="font-bold text-lg mb-1">Officer Dashboard</div>
+        <div class="text-gray-600 text-sm text-center">Issue violation tickets, view your history, manage alerts.</div>
+      </a>
+      <!-- Driver Card -->
+      <a href="notary-records.html?role=driver" class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:bg-teal-50 transition">
+        <div class="text-4xl mb-2">🚗</div>
+        <div class="font-bold text-lg mb-1">Driver Dashboard</div>
+        <div class="text-gray-600 text-sm text-center">View/pay violations, track license points, manage notifications.</div>
+      </a>
+      <!-- Admin Card -->
+      <a href="notary-records.html?role=admin" class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:bg-teal-50 transition">
+        <div class="text-4xl mb-2">🛂</div>
+        <div class="font-bold text-lg mb-1">Admin Dashboard</div>
+        <div class="text-gray-600 text-sm text-center">Monitor all violations, analytics, and system alerts.</div>
+      </a>
+    </section>
+  </main>
+
+  <!-- Wallet Connect Modal -->
+  <div id="walletModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-8 shadow-lg w-full max-w-xs text-center">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Connect Wallet</h2>
+      <button id="modalConnectBtn" class="w-full bg-teal-700 hover:bg-teal-600 text-white font-semibold py-2 rounded mb-3">
+        MetaMask / WalletConnect
+      </button>
+      <button onclick="document.getElementById('walletModal').classList.add('hidden')" class="text-gray-500 mt-2">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // Wallet Connect Logic
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const modalConnectBtn = document.getElementById("modalConnectBtn");
+    const walletModal = document.getElementById("walletModal");
+    const profile = document.getElementById("profile");
+    const walletShort = document.getElementById("walletShort");
+
+    connectWalletBtn.onclick = () => walletModal.classList.remove("hidden");
+    modalConnectBtn.onclick = async () => {
+      if (!window.ethereum) {
+        alert("🦊 Please install MetaMask.");
+        return;
+      }
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        const address = accounts[0];
+        const short = `${address.slice(0, 6)}...${address.slice(-4)}`;
+        sessionStorage.setItem("walletAddress", address);
+        walletShort.textContent = short;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        walletModal.classList.add("hidden");
+      } catch (err) {
+        alert("Wallet connection failed.");
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = sessionStorage.getItem("walletAddress");
+      if (saved) {
+        walletShort.textContent = `${saved.slice(0, 6)}...${saved.slice(-4)}`;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+      }
+    });
+
+    // Notifications Logic (demo)
+    const notificationsBtn = document.getElementById("notificationsBtn");
+    const notificationsDrawer = document.getElementById("notificationsDrawer");
+    const notificationsList = document.getElementById("notificationsList");
+    const notifDot = document.getElementById("notifDot");
+    notificationsBtn.onclick = () => {
+      notificationsDrawer.classList.remove("hidden");
+      notifDot.classList.add("hidden");
+    };
+    // Example notifications
+    const demoNotifs = [
+      "You have 2 unpaid violations.",
+      "Officer: New violation issued.",
+      "Admin: Spike in violations detected."
+    ];
+    notificationsList.innerHTML = demoNotifs.map(n => `<li class="border-b pb-2">${n}</li>`).join('');
+    notifDot.classList.remove("hidden");
+  </script>
+</body>
+
+</html>

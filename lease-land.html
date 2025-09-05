@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DLPT Officer Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.umd.min.js"></script>
+</head>
+
+<body class="bg-blue-50 min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="bg-teal-900 text-white flex items-center justify-between px-4 py-3 shadow-md">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl font-bold">🚦 DLPT</span>
+      <span class="hidden sm:inline text-sm font-semibold ml-2">Officer Dashboard</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button id="notificationsBtn" class="relative text-xl hover:text-teal-300" aria-label="Notifications">
+        <span>🔔</span>
+        <span id="notifDot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+      </button>
+      <button id="connectWalletBtn" class="bg-teal-700 hover:bg-teal-600 text-white font-semibold px-4 py-2 rounded">
+        Connect Wallet
+      </button>
+      <div id="profile" class="hidden flex items-center gap-2 bg-teal-800 px-3 py-1 rounded text-sm font-mono">
+        <span id="walletShort">0x...</span>
+        <span class="ml-2 bg-teal-600 px-2 py-1 rounded text-xs font-bold">Officer</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notifications Drawer -->
+  <div id="notificationsDrawer" class="fixed top-0 right-0 w-80 max-w-full h-full bg-white shadow-lg z-50 p-6 hidden flex flex-col">
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-lg font-bold text-teal-900">Notifications</span>
+      <button onclick="document.getElementById('notificationsDrawer').classList.add('hidden')" class="text-xl">✖️</button>
+    </div>
+    <ul id="notificationsList" class="space-y-3 text-gray-700">
+      <!-- Notifications will be injected here -->
+    </ul>
+  </div>
+
+  <!-- Main -->
+  <main class="flex-1 flex flex-col items-center px-4 py-8">
+    <section class="w-full max-w-lg bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Issue Violation Ticket</h2>
+      <form id="violationForm" class="space-y-4">
+        <input type="text" id="licenseNumber" placeholder="License Number" required class="w-full px-4 py-2 border rounded-md" />
+        <select id="violationType" required class="w-full px-4 py-2 border rounded-md">
+          <option value="">Select Violation Type</option>
+          <option value="Overspeeding">Overspeeding</option>
+          <option value="Illegal Parking">Illegal Parking</option>
+          <option value="No Helmet">No Helmet</option>
+          <option value="Red Light">Red Light Violation</option>
+        </select>
+        <input type="text" id="location" placeholder="Location" required class="w-full px-4 py-2 border rounded-md" />
+        <input type="datetime-local" id="timestamp" required class="w-full px-4 py-2 border rounded-md" />
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 rounded-md">
+          ➕ Issue Violation
+        </button>
+      </form>
+      <p id="status" class="mt-4 text-sm text-gray-700"></p>
+    </section>
+
+    <section class="w-full max-w-2xl bg-white rounded-xl shadow-md p-6 mb-8">
+      <h2 class="text-xl font-bold mb-4 text-teal-900">Your Issued Violations</h2>
+      <table class="min-w-full text-sm table-auto border border-gray-300">
+        <thead class="bg-teal-700 text-white">
+          <tr>
+            <th class="p-2 text-left">License #</th>
+            <th class="p-2 text-left">Type</th>
+            <th class="p-2 text-left">Location</th>
+            <th class="p-2 text-left">Timestamp</th>
+            <th class="p-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable" class="bg-white text-gray-800"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    // Wallet Connect Logic
+    const connectWalletBtn = document.getElementById("connectWalletBtn");
+    const profile = document.getElementById("profile");
+    const walletShort = document.getElementById("walletShort");
+    let officerWallet = null;
+
+    connectWalletBtn.onclick = async () => {
+      if (!window.ethereum) {
+        alert("🦊 Please install MetaMask.");
+        return;
+      }
+      try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_requestAccounts", []);
+        officerWallet = accounts[0];
+        const short = `${officerWallet.slice(0,6)}...${officerWallet.slice(-4)}`;
+        sessionStorage.setItem("walletAddress", officerWallet);
+        walletShort.textContent = short;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        loadHistory();
+      } catch (err) {
+        alert("Wallet connection failed.");
+      }
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const saved = sessionStorage.getItem("walletAddress");
+      if (saved) {
+        officerWallet = saved;
+        walletShort.textContent = `${saved.slice(0,6)}...${saved.slice(-4)}`;
+        profile.classList.remove("hidden");
+        connectWalletBtn.classList.add("hidden");
+        loadHistory();
+      }
+    });
+
+    // Issue Violation Logic (demo, replace with blockchain tx)
+    const violationForm = document.getElementById("violationForm");
+    const status = document.getElementById("status");
+    violationForm.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!officerWallet) {
+        status.textContent = "Connect wallet first.";
+        return;
+      }
+      const license = document.getElementById("licenseNumber").value.trim();
+      const type = document.getElementById("violationType").value;
+      const location = document.getElementById("location").value.trim();
+      const timestamp = document.getElementById("timestamp").value;
+      // Simulate blockchain tx
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      violations.push({
+        officer: officerWallet,
+        license,
+        type,
+        location,
+        timestamp,
+        status: "Unpaid"
+      });
+      localStorage.setItem("violations", JSON.stringify(violations));
+      status.textContent = "Violation issued successfully!";
+      violationForm.reset();
+      loadHistory();
+    };
+
+    // Load Officer's Issued Violations
+    function loadHistory() {
+      const historyTable = document.getElementById("historyTable");
+      let violations = JSON.parse(localStorage.getItem("violations") || "[]");
+      const myViolations = violations.filter(v => v.officer === officerWallet);
+      historyTable.innerHTML = myViolations.length
+        ? myViolations.map(v => `
+          <tr>
+            <td class="p-2">${v.license}</td>
+            <td class="p-2">${v.type}</td>
+            <td class="p-2">${v.location}</td>
+            <td class="p-2">${v.timestamp.replace('T',' ')}</td>
+            <td class="p-2">${v.status}</td>
+          </tr>
+        `).join('')
+        : `<tr><td colspan="5" class="p-2 text-center text-gray-400">No violations issued yet.</td></tr>`;
+    }
+
+    // Notifications Logic (demo)
+    const notificationsBtn = document.getElementById("notificationsBtn");
+    const notificationsDrawer = document.getElementById("notificationsDrawer");
+    const notificationsList = document.getElementById("notificationsList");
+    const notifDot = document.getElementById("notifDot");
+    notificationsBtn.onclick = () => {
+      notificationsDrawer.classList.remove("hidden");
+      notifDot.classList.add("hidden");
+    };
+    // Example notifications
+    const demoNotifs = [
+      "2 violations unpaid by drivers.",
+      "System: New violation type added.",
+      "Reminder: Review issued tickets."
+    ];
+    notificationsList.innerHTML = demoNotifs.map(n => `<li class="border-b pb-2">${n}</li>`).join('');
+    notifDot.classList.remove("hidden");
+  </script>
+</body>
+
+</html>
